@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xxxl,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: colors.background,
   },
   imagePickerText: {
     ...typography.body,
