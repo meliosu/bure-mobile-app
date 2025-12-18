@@ -8,7 +8,8 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
+import Constants from 'expo-constants';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Pencil, Trash2, Clock, ChefHat, Users, Flame, CalendarDays } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -97,17 +98,19 @@ export default function RecipeDetailScreen() {
 
   if (!recipe) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <View style={styles.errorContainer}>
+        <StatusBar style="dark" />
+        <TouchableOpacity style={styles.errorBackButton} onPress={() => router.back()}>
           <ArrowLeft size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.errorText}>Рецепт не найден</Text>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
+      <StatusBar style="light" translucent backgroundColor="transparent" />
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header with back button */}
         <View style={styles.headerRow}>
@@ -242,7 +245,7 @@ export default function RecipeDetailScreen() {
         onCancel={() => setShowDeleteDialog(false)}
         danger
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -253,7 +256,7 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     position: 'absolute',
-    top: spacing.md,
+    top: Constants.statusBarHeight + spacing.md,
     left: spacing.lg,
     zIndex: 10,
   },
@@ -268,7 +271,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: 250,
+    height: 280,
     backgroundColor: colors.borderLight,
   },
   headerContainer: {
@@ -423,5 +426,20 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
     marginLeft: spacing.md,
+  },
+  errorContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingTop: Constants.statusBarHeight,
+  },
+  errorBackButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: spacing.lg,
+    ...shadows.sm,
   },
 });
