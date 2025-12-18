@@ -45,7 +45,7 @@ const mockRecipes: Recipe[] = [
     name: 'Пельмени',
     ingredients: ['Мука, 400 г.', 'Фарш, 500 г.', 'Лук, 2 шт.', 'Соль', 'Перец'],
     instructions: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean finibus lacinia turpis molestie lobortis. Curabitur tincidunt orci turpis, ut finibus orci commodo a.',
-    image: 'https://images.unsplash.com/photo-1583394293214-28ez963ed9a0?w=400',
+    image: 'https://images.unsplash.com/photo-1547414368-1ae8e2c0ae4f?w=400',
     description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean finibus lacinia turpis molestie lobortis. Curabitur tincidunt orci turpis, ut finibus orci commodo a.',
     tags: ['быстро', 'вкусно', 'русское'],
     createdAt: new Date('2024-03-01'),
@@ -100,13 +100,15 @@ export const getRecipeById = async (id: string): Promise<Recipe | null> => {
 
 export const createRecipe = async (input: RecipeCreateInput): Promise<Recipe> => {
   await delay(400);
+  // Note: Recipe is not actually saved. Will be handled by backend later.
   const newRecipe: Recipe = {
     ...input,
     id: Date.now().toString(),
     createdAt: new Date(),
     updatedAt: new Date(),
   };
-  mockRecipes.unshift(newRecipe);
+  // mockRecipes.unshift(newRecipe); // Disabled - will be saved by backend
+  console.log('Recipe created (not saved):', newRecipe);
   return newRecipe;
 };
 
@@ -116,12 +118,14 @@ export const updateRecipe = async (input: RecipeUpdateInput): Promise<Recipe> =>
   if (index === -1) {
     throw new Error('Рецепт не найден');
   }
+  // Note: Changes are not actually saved. Will be handled by backend later.
   const updated: Recipe = {
     ...mockRecipes[index],
     ...input,
     updatedAt: new Date(),
   };
-  mockRecipes[index] = updated;
+  // mockRecipes[index] = updated; // Disabled - will be saved by backend
+  console.log('Recipe updated (not saved):', updated);
   return updated;
 };
 

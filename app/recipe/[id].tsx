@@ -130,33 +130,35 @@ export default function RecipeDetailScreen() {
           )}
         </View>
 
-        {/* Recipe Info Grid */}
-        <View style={styles.infoCard}>
-          {recipe.cookingTime && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Время приготовления</Text>
-              <Text style={styles.infoValue}>{formatCookingTime(recipe.cookingTime)}</Text>
-            </View>
-          )}
-          {recipe.difficulty && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Сложность</Text>
-              <Text style={styles.infoValue}>{recipe.difficulty}</Text>
-            </View>
-          )}
-          {recipe.servings && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Количество порций</Text>
-              <Text style={styles.infoValue}>{recipe.servings} порции</Text>
-            </View>
-          )}
-          {recipe.calories && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Калории</Text>
-              <Text style={styles.infoValue}>{recipe.calories} калорий</Text>
-            </View>
-          )}
-        </View>
+        {/* Recipe Info Grid - only render if there's any info */}
+        {(recipe.cookingTime || recipe.difficulty || recipe.servings || recipe.calories) && (
+          <View style={styles.infoCard}>
+            {recipe.cookingTime && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Время приготовления</Text>
+                <Text style={styles.infoValue}>{formatCookingTime(recipe.cookingTime)}</Text>
+              </View>
+            )}
+            {recipe.difficulty && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Сложность</Text>
+                <Text style={styles.infoValue}>{recipe.difficulty}</Text>
+              </View>
+            )}
+            {recipe.servings && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Количество порций</Text>
+                <Text style={styles.infoValue}>{recipe.servings} порции</Text>
+              </View>
+            )}
+            {recipe.calories && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Калории</Text>
+                <Text style={styles.infoValue}>{recipe.calories} калорий</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Ingredients */}
         <View style={styles.section}>

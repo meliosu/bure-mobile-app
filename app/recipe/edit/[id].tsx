@@ -7,11 +7,14 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  Image,
+  ActionSheetIOS,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { X, Plus, Trash2, CalendarDays } from 'lucide-react-native';
+import { X, Plus, Trash2, CalendarDays, Camera, ImageIcon } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as ImagePicker from 'expo-image-picker';
 import { Recipe, RecipeUpdateInput } from '../../../src/types';
 import { getRecipeById, updateRecipe } from '../../../src/services';
 import { Button, Input, Tag, Loading } from '../../../src/components';
@@ -115,6 +118,68 @@ export default function RecipeEditScreen() {
     }));
   };
 
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Ошибка', 'Нужен доступ к галерее для выбора изображения');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      updateField('image', result.assets[0].uri);
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Ошибка', 'Нужен доступ к камере для съёмки');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      updateField('image', result.assets[0].uri);
+    }
+  };
+
+  const showImageOptions = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Отмена', 'Сделать фото', 'Выбрать из галереи'],
+          cancelButtonIndex: 0,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) takePhoto();
+          if (buttonIndex === 2) pickImage();
+        }
+      );
+    } else {
+      Alert.alert(
+        'Выберите изображение',
+        '',
+        [
+          { text: 'Отмена', style: 'cancel' },
+          { text: 'Сделать фото', onPress: takePhoto },
+          { text: 'Из галереи', onPress: pickImage },
+        ]
+      );
+    }
+  };
+
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     
@@ -187,13 +252,34 @@ export default function RecipeEditScreen() {
           numberOfLines={3}
         />
 
-        {/* Image URL */}
-        <Input
-          label="URL изображения"
-          value={formData.image || ''}
-          onChangeText={(text) => updateField('image', text)}
-          placeholder="https://example.com/image.jpg"
-        />
+        {/* Image */}
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Изображение</Text>
+          {formData.image ? (
+            <View style={styles.imagePreviewContainer}>
+              <Image source={{ uri: formData.image }} style={styles.imagePreview} />
+              <View style={styles.imageActions}>
+                <TouchableOpacity style={styles.changeImageButton} onPress={showImageOptions}>
+                  <Camera size={16} color={colors.white} />
+                  <Text style={styles.changeImageText}>Изменить</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.removeImageButton} 
+                  onPress={() => updateField('image', undefined)}
+                >
+                  <Trash2 size={16} color={colors.white} />
+                  <Text style={styles.removeImageText}>Удалить</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.imagePicker} onPress={showImageOptions}>
+              <ImageIcon size={48} color={colors.primary} />
+              <Text style={styles.imagePickerText}>Добавить изображение</Text>
+              <Text style={styles.imagePickerHint}>Нажмите для выбора из галереи или камеры</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* Cooking Time */}
         <Input
@@ -508,5 +594,68 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: spacing.xxxl,
+  },
+  imagePreviewContainer: {
+    position: 'relative',
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+  },
+  imagePreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: borderRadius.lg,
+  },
+  imageActions: {
+    flexDirection: 'row',
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  changeImageButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+  },
+  changeImageText: {
+    ...typography.bodySmall,
+    color: colors.white,
+    marginLeft: spacing.xs,
+  },
+  removeImageButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.error,
+    borderRadius: borderRadius.md,
+  },
+  removeImageText: {
+    ...typography.bodySmall,
+    color: colors.white,
+    marginLeft: spacing.xs,
+  },
+  imagePicker: {
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: colors.border,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.xxxl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.backgroundSecondary,
+  },
+  imagePickerText: {
+    ...typography.body,
+    color: colors.primary,
+    marginTop: spacing.md,
+  },
+  imagePickerHint: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
 });

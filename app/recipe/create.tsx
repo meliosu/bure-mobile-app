@@ -7,11 +7,13 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { X, Plus, Trash2, CalendarDays } from 'lucide-react-native';
+import { X, Plus, Trash2, CalendarDays, Camera, ImageIcon } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as ImagePicker from 'expo-image-picker';
 import { RecipeCreateInput } from '../../src/types';
 import { createRecipe } from '../../src/services';
 import { Button, Input, Tag } from '../../src/components';
@@ -30,6 +32,57 @@ export default function RecipeCreateScreen() {
   });
   const [tagInput, setTagInput] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const pickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (!permissionResult.granted) {
+      Alert.alert('Ошибка', 'Необходимо разрешение на доступ к галерее');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      updateField('image', result.assets[0].uri);
+    }
+  };
+
+  const takePhoto = async () => {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    
+    if (!permissionResult.granted) {
+      Alert.alert('Ошибка', 'Необходимо разрешение на использование камеры');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      updateField('image', result.assets[0].uri);
+    }
+  };
+
+  const showImageOptions = () => {
+    Alert.alert(
+      'Выбрать изображение',
+      'Откуда загрузить изображение?',
+      [
+        { text: 'Камера', onPress: takePhoto },
+        { text: 'Галерея', onPress: pickImage },
+        { text: 'Отмена', style: 'cancel' },
+      ]
+    );
+  };
 
   const updateField = <K extends keyof RecipeCreateInput>(
     field: K,
@@ -149,13 +202,34 @@ export default function RecipeCreateScreen() {
           numberOfLines={3}
         />
 
-        {/* Image URL */}
-        <Input
-          label="URL изображения"
-          value={formData.image || ''}
-          onChangeText={(text) => updateField('image', text)}
-          placeholder="https://example.com/image.jpg"
-        />
+        {/* Image Picker */}
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Изображение</Text>
+          {formData.image ? (
+            <View style={styles.imagePreviewContainer}>
+              <Image source={{ uri: formData.image }} style={styles.imagePreview} />
+              <View style={styles.imageActions}>
+                <TouchableOpacity style={styles.changeImageButton} onPress={showImageOptions}>
+                  <Camera size={18} color={colors.primary} />
+                  <Text style={styles.changeImageText}>Изменить</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.removeImageButton}
+                  onPress={() => updateField('image', undefined)}
+                >
+                  <Trash2 size={18} color={colors.error} />
+                  <Text style={styles.removeImageText}>Удалить</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.imagePicker} onPress={showImageOptions}>
+              <ImageIcon size={32} color={colors.textTertiary} />
+              <Text style={styles.imagePickerText}>Добавить фото</Text>
+              <Text style={styles.imagePickerHint}>Нажмите, чтобы выбрать</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* Cooking Time */}
         <Input
@@ -470,5 +544,68 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: spacing.xxxl,
+  },
+  imagePreviewContainer: {
+    position: 'relative',
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+  },
+  imagePreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: borderRadius.lg,
+  },
+  imageActions: {
+    flexDirection: 'row',
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  changeImageButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+  },
+  changeImageText: {
+    ...typography.bodySmall,
+    color: colors.white,
+    marginLeft: spacing.xs,
+  },
+  removeImageButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.error,
+    borderRadius: borderRadius.md,
+  },
+  removeImageText: {
+    ...typography.bodySmall,
+    color: colors.white,
+    marginLeft: spacing.xs,
+  },
+  imagePicker: {
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: colors.border,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.xxxl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.backgroundSecondary,
+  },
+  imagePickerText: {
+    ...typography.body,
+    color: colors.primary,
+    marginTop: spacing.md,
+  },
+  imagePickerHint: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
 });
