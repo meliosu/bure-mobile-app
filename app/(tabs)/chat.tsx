@@ -92,7 +92,7 @@ export default function ChatScreen() {
       <View style={styles.header}>
         <View style={styles.headerTitleContainer}>
           <Bot size={24} color={colors.primary} />
-          <Text style={styles.headerTitle}>AI Помощник</Text>
+          <Text style={styles.headerTitle}>AI Ассистент</Text>
         </View>
         {messages.length > 0 && (
           <TouchableOpacity
@@ -112,9 +112,9 @@ export default function ChatScreen() {
         {messages.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Bot size={64} color={colors.primaryLight} />
-            <Text style={styles.emptyTitle}>Привет! Я ваш AI помощник</Text>
+            <Text style={styles.emptyTitle}>Привет, это Ваш AI Ассистент!</Text>
             <Text style={styles.emptyText}>
-              Спросите меня о рецептах, ингредиентах или советах по приготовлению блюд.
+              Можете попросить меня придумать рецепт для имеющихся ингредиентов или найти рецепты, похожие на ваши.
             </Text>
           </View>
         ) : (
@@ -152,7 +152,7 @@ export default function ChatScreen() {
       <ConfirmDialog
         visible={showClearDialog}
         title="Очистить чат"
-        message="Вы уверены, что хотите удалить всю историю чата? Это действие нельзя отменить."
+        message="Вы уверены, что хотите очистить историю чата? Это действие нельзя отменить."
         confirmText="Очистить"
         cancelText="Отмена"
         onConfirm={handleClear}

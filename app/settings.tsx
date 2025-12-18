@@ -99,7 +99,7 @@ export default function SettingsScreen() {
                 <View style={styles.settingTextContainer}>
                   <Text style={styles.settingTitle}>Включить уведомления</Text>
                   <Text style={styles.settingDescription}>
-                    Получать напоминания о рецептах
+                    Получать напоминания о рецептах, которые Вы давно не готовили
                   </Text>
                 </View>
               </View>
@@ -122,7 +122,7 @@ export default function SettingsScreen() {
                     <View style={styles.settingTextContainer}>
                       <Text style={styles.settingTitle}>Частота уведомлений</Text>
                       <Text style={styles.settingDescription}>
-                        Как часто напоминать о рецептах (дней)
+                         частота уведомлений (дней)
                       </Text>
                     </View>
                   </View>
@@ -139,16 +139,6 @@ export default function SettingsScreen() {
                 </View>
               </View>
             )}
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>О настройках</Text>
-          <View style={styles.infoCard}>
-            <Text style={styles.infoText}>
-              Уведомления помогут вам не забыть о любимых рецептах и напомнят, 
-              когда пора приготовить что-то вкусное!
-            </Text>
           </View>
         </View>
       </View>

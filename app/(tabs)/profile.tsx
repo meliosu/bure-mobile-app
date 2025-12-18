@@ -110,7 +110,7 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>О приложении</Text>
           <View style={styles.aboutCard}>
-            <Text style={styles.appName}>Книга Рецептов</Text>
+            <Text style={styles.appName}>BuRe</Text>
             <Text style={styles.appVersion}>Версия 1.0.0</Text>
             <Text style={styles.appDescription}>
               Храните и организуйте свои любимые рецепты в одном месте

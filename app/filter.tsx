@@ -164,13 +164,13 @@ export default function FilterScreen() {
 
         {/* Max Cooking Time */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Максимальное время (мин)</Text>
+          <Text style={styles.sectionTitle}>Максимальное время (в минутах)</Text>
           <Input
             value={filters.maxCookingTime?.toString() || ''}
             onChangeText={(text) =>
               updateFilter('maxCookingTime', text ? parseInt(text) : undefined)
             }
-            placeholder="Например: 60"
+            placeholder="70"
             keyboardType="numeric"
             containerStyle={styles.timeInput}
           />

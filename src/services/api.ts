@@ -64,28 +64,13 @@ const mockRecipes: Recipe[] = [
     createdAt: new Date('2024-03-15'),
     updatedAt: new Date('2024-03-15'),
   },
-  {
-    id: '5',
-    name: 'Салат Цезарь',
-    ingredients: ['Салат романо, 200 г.', 'Курица, 300 г.', 'Пармезан, 100 г.', 'Сухарики, 100 г.', 'Соус Цезарь'],
-    instructions: 'Обжарить курицу, нарезать салат, добавить сухарики и сыр, заправить соусом.',
-    image: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400',
-    description: 'Классический салат Цезарь с курицей и пармезаном.',
-    cookingTime: 25,
-    difficulty: 'Легко',
-    calories: 280,
-    servings: 2,
-    tags: ['салат', 'легко', 'быстро'],
-    createdAt: new Date('2024-04-01'),
-    updatedAt: new Date('2024-04-01'),
-  },
 ];
 
 // Mock user data
 let mockUser: User = {
   id: '1',
-  username: 'Иван Петров',
-  telegramHandle: '@ivan_petrov',
+  username: 'Александр Артёмович',
+  telegramHandle: '@telegram-handle',
   settings: {
     notificationsEnabled: true,
     notificationFrequencyDays: 7,
@@ -263,11 +248,8 @@ export const sendChatMessage = async (content: string): Promise<ChatMessage> => 
   // Simulate AI response
   await delay(1000);
   const aiResponses = [
-    'Отличный вопрос! Для приготовления этого блюда вам понадобится около 30 минут и базовые ингредиенты.',
-    'Рекомендую попробовать добавить немного специй для более насыщенного вкуса.',
-    'Это классический рецепт! Могу предложить несколько вариаций.',
-    'Для лучшего результата используйте свежие ингредиенты и следуйте рецепту точно.',
-    'Интересный выбор! Это блюдо отлично подойдет для семейного ужина.',
+    'Отличный вопрос! Для приготовления этого блюда вам понадобится около 30 минут и следующие ингредиенты:...',
+    'Из ваших ингредиентов можно сделать следующее блюдо: ...'
   ];
   
   const assistantMessage: ChatMessage = {
