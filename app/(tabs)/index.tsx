@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import { Recipe, FilterOptions } from '../../src/types';
-import { getRecipes, searchRecipes, filterRecipes } from '../../src/services';
+import { getRecipes, searchRecipes, filterRecipes, updateLastCooked } from '../../src/services';
 import { SearchBar, FilterButton, RecipeCard, Loading } from '../../src/components';
 import { colors, spacing, borderRadius, shadows } from '../../src/constants';
 
@@ -86,6 +86,21 @@ export default function RecipeListScreen() {
     });
   };
 
+  const handleUpdateLastCooked = async (id: string, date: Date) => {
+    try {
+      await updateLastCooked(id, date);
+      // Update local state
+      setRecipes((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, lastCooked: date } : r))
+      );
+      setFilteredRecipes((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, lastCooked: date } : r))
+      );
+    } catch (error) {
+      console.error('Error updating last cooked:', error);
+    }
+  };
+
   if (loading) {
     return <Loading message="Загрузка рецептов..." />;
   }
@@ -107,7 +122,11 @@ export default function RecipeListScreen() {
         data={filteredRecipes}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <RecipeCard recipe={item} onPress={() => navigateToRecipe(item.id)} />
+          <RecipeCard
+            recipe={item}
+            onPress={() => navigateToRecipe(item.id)}
+            onUpdateLastCooked={handleUpdateLastCooked}
+          />
         )}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}

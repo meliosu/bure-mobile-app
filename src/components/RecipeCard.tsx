@@ -1,15 +1,19 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { Clock } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { Clock, CalendarDays } from 'lucide-react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Recipe } from '../types';
 import { colors, borderRadius, spacing, typography, shadows } from '../constants';
 
 interface RecipeCardProps {
   recipe: Recipe;
   onPress: () => void;
+  onUpdateLastCooked?: (id: string, date: Date) => void;
 }
 
-export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onPress }) => {
+export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onPress, onUpdateLastCooked }) => {
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
   const formatCookingTime = (minutes?: number): string => {
     if (!minutes) return '';
     if (minutes >= 60) {
@@ -18,6 +22,26 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onPress }) => {
       return mins > 0 ? `${hours}:${mins.toString().padStart(2, '0')}` : `${hours}:00`;
     }
     return `0:${minutes.toString().padStart(2, '0')}`;
+  };
+
+  const formatLastCooked = (date?: Date): string => {
+    if (!date) return 'Не готовили';
+    return new Date(date).toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'short',
+    });
+  };
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate && onUpdateLastCooked) {
+      onUpdateLastCooked(recipe.id, selectedDate);
+    }
+  };
+
+  const handleLastCookedPress = (e: any) => {
+    e.stopPropagation();
+    setShowDatePicker(true);
   };
 
   return (
@@ -39,20 +63,39 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onPress }) => {
           )}
         </View>
         {recipe.description && (
-          <Text style={styles.description} numberOfLines={3}>
+          <Text style={styles.description} numberOfLines={2}>
             {recipe.description}
           </Text>
         )}
-        {recipe.tags && recipe.tags.length > 0 && (
-          <View style={styles.tagsContainer}>
-            {recipe.tags.slice(0, 3).map((tag, index) => (
-              <View key={index} style={styles.tag}>
-                <Text style={styles.tagText}>#{tag}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+        <View style={styles.bottomRow}>
+          {recipe.tags && recipe.tags.length > 0 && (
+            <View style={styles.tagsContainer}>
+              {recipe.tags.slice(0, 2).map((tag, index) => (
+                <View key={index} style={styles.tag}>
+                  <Text style={styles.tagText}>#{tag}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+          <TouchableOpacity
+            style={styles.lastCookedButton}
+            onPress={handleLastCookedPress}
+            activeOpacity={0.7}
+          >
+            <CalendarDays size={12} color={colors.primary} />
+            <Text style={styles.lastCookedText}>{formatLastCooked(recipe.lastCooked)}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+      {showDatePicker && (
+        <DateTimePicker
+          value={recipe.lastCooked ? new Date(recipe.lastCooked) : new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={handleDateChange}
+          maximumDate={new Date()}
+        />
+      )}
     </TouchableOpacity>
   );
 };
@@ -106,10 +149,16 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+  },
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: spacing.sm,
+    flex: 1,
   },
   tag: {
     backgroundColor: colors.background,
@@ -121,5 +170,20 @@ const styles = StyleSheet.create({
   tagText: {
     ...typography.caption,
     color: colors.textSecondary,
+  },
+  lastCookedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primaryLighter,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    marginLeft: spacing.xs,
+  },
+  lastCookedText: {
+    ...typography.caption,
+    color: colors.primary,
+    marginLeft: spacing.xs,
+    fontWeight: '500',
   },
 });

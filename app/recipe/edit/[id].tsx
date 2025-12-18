@@ -6,10 +6,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { X, Plus, Trash2 } from 'lucide-react-native';
+import { X, Plus, Trash2, CalendarDays } from 'lucide-react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Recipe, RecipeUpdateInput } from '../../../src/types';
 import { getRecipeById, updateRecipe } from '../../../src/services';
 import { Button, Input, Tag, Loading } from '../../../src/components';
@@ -22,6 +24,7 @@ export default function RecipeEditScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [formData, setFormData] = useState<RecipeUpdateInput>({
     id: '',
     name: '',
@@ -52,6 +55,7 @@ export default function RecipeEditScreen() {
           calories: recipe.calories,
           servings: recipe.servings,
           tags: recipe.tags,
+          lastCooked: recipe.lastCooked,
         });
       }
     } catch (error) {
@@ -233,6 +237,48 @@ export default function RecipeEditScreen() {
           keyboardType="numeric"
         />
 
+        {/* Last Cooked Date */}
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Последний раз готовили</Text>
+          <TouchableOpacity
+            style={styles.datePickerButton}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <CalendarDays size={20} color={colors.primary} />
+            <Text style={styles.datePickerText}>
+              {formData.lastCooked
+                ? new Date(formData.lastCooked).toLocaleDateString('ru-RU', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })
+                : 'Выбрать дату'}
+            </Text>
+          </TouchableOpacity>
+          {formData.lastCooked && (
+            <TouchableOpacity
+              style={styles.clearDateButton}
+              onPress={() => updateField('lastCooked', undefined)}
+            >
+              <Text style={styles.clearDateText}>Очистить дату</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        {showDatePicker && (
+          <DateTimePicker
+            value={formData.lastCooked ? new Date(formData.lastCooked) : new Date()}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={(event, selectedDate) => {
+              setShowDatePicker(Platform.OS === 'ios');
+              if (selectedDate) {
+                updateField('lastCooked', selectedDate);
+              }
+            }}
+            maximumDate={new Date()}
+          />
+        )}
+
         {/* Tags */}
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>Теги</Text>
@@ -399,6 +445,29 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     color: colors.primary,
     marginRight: spacing.xs,
+  },
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  datePickerText: {
+    ...typography.body,
+    color: colors.textPrimary,
+    marginLeft: spacing.md,
+  },
+  clearDateButton: {
+    marginTop: spacing.sm,
+    alignSelf: 'flex-start',
+  },
+  clearDateText: {
+    ...typography.bodySmall,
+    color: colors.error,
   },
   ingredientRow: {
     flexDirection: 'row',

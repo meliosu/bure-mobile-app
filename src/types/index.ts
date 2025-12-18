@@ -27,6 +27,7 @@ export interface RecipeCreateInput {
   calories?: number;
   servings?: number;
   tags?: string[];
+  lastCooked?: Date;
 }
 
 export interface RecipeUpdateInput extends Partial<RecipeCreateInput> {

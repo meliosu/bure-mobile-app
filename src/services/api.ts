@@ -22,6 +22,7 @@ const mockRecipes: Recipe[] = [
     calories: 300,
     servings: 2,
     tags: ['суп', 'русское'],
+    lastCooked: new Date('2024-12-10'),
     createdAt: new Date('2024-01-15'),
     updatedAt: new Date('2024-01-15'),
   },
@@ -35,6 +36,7 @@ const mockRecipes: Recipe[] = [
     cookingTime: 40,
     difficulty: 'Легко',
     tags: ['легко', 'блины'],
+    lastCooked: new Date('2024-11-25'),
     createdAt: new Date('2024-02-10'),
     updatedAt: new Date('2024-02-10'),
   },
@@ -61,6 +63,7 @@ const mockRecipes: Recipe[] = [
     calories: 450,
     servings: 8,
     tags: ['десерт', 'торт', 'праздник'],
+    lastCooked: new Date('2024-12-01'),
     createdAt: new Date('2024-03-15'),
     updatedAt: new Date('2024-03-15'),
   },
@@ -128,6 +131,20 @@ export const deleteRecipe = async (id: string): Promise<void> => {
   if (index !== -1) {
     mockRecipes.splice(index, 1);
   }
+};
+
+export const updateLastCooked = async (id: string, date: Date): Promise<Recipe> => {
+  await delay(200);
+  const index = mockRecipes.findIndex(r => r.id === id);
+  if (index === -1) {
+    throw new Error('Рецепт не найден');
+  }
+  mockRecipes[index] = {
+    ...mockRecipes[index],
+    lastCooked: date,
+    updatedAt: new Date(),
+  };
+  return mockRecipes[index];
 };
 
 export const searchRecipes = async (query: string): Promise<Recipe[]> => {
