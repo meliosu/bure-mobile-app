@@ -6,12 +6,14 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Pencil, Trash2, Clock, ChefHat, Users, Flame } from 'lucide-react-native';
+import { ArrowLeft, Pencil, Trash2, Clock, ChefHat, Users, Flame, CalendarDays } from 'lucide-react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Recipe } from '../../src/types';
-import { getRecipeById, deleteRecipe } from '../../src/services';
+import { getRecipeById, deleteRecipe, updateLastCooked } from '../../src/services';
 import { Button, Loading, ConfirmDialog } from '../../src/components';
 import { colors, spacing, borderRadius, typography, shadows } from '../../src/constants';
 
@@ -22,6 +24,7 @@ export default function RecipeDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
     loadRecipe();
@@ -55,6 +58,27 @@ export default function RecipeDetailScreen() {
       setDeleting(false);
       setShowDeleteDialog(false);
     }
+  };
+
+  const handleDateChange = async (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate && recipe) {
+      try {
+        await updateLastCooked(recipe.id, selectedDate);
+        setRecipe({ ...recipe, lastCooked: selectedDate });
+      } catch (error) {
+        console.error('Error updating last cooked date:', error);
+      }
+    }
+  };
+
+  const formatLastCooked = (date?: Date): string => {
+    if (!date) return 'Не указано';
+    return date.toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
   };
 
   const formatCookingTime = (minutes?: number): string => {
@@ -158,6 +182,30 @@ export default function RecipeDetailScreen() {
               </View>
             )}
           </View>
+        )}
+
+        {/* Last Cooked */}
+        <View style={styles.lastCookedSection}>
+          <Text style={styles.lastCookedLabel}>Последний раз готовили:</Text>
+          <TouchableOpacity 
+            style={styles.lastCookedButton}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <CalendarDays size={20} color={colors.primary} />
+            <Text style={styles.lastCookedText}>
+              {formatLastCooked(recipe.lastCooked)}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={recipe.lastCooked ? new Date(recipe.lastCooked) : new Date()}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handleDateChange}
+            maximumDate={new Date()}
+          />
         )}
 
         {/* Ingredients */}
@@ -348,5 +396,32 @@ const styles = StyleSheet.create({
     color: colors.error,
     textAlign: 'center',
     marginTop: 100,
+  },
+  lastCookedSection: {
+    marginTop: spacing.xl,
+    marginHorizontal: spacing.lg,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    ...shadows.sm,
+  },
+  lastCookedLabel: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+  },
+  lastCookedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primaryLighter,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+  },
+  lastCookedText: {
+    ...typography.body,
+    color: colors.primary,
+    fontWeight: '600',
+    marginLeft: spacing.md,
   },
 });

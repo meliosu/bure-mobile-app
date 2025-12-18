@@ -114,7 +114,7 @@ export default function ChatScreen() {
             <Bot size={64} color={colors.primaryLight} />
             <Text style={styles.emptyTitle}>Привет, это Ваш AI Ассистент!</Text>
             <Text style={styles.emptyText}>
-              Можете попросить меня придумать рецепт для имеющихся ингредиентов или найти рецепты, похожие на ваши.
+              Можете попросить меня придумать рецепт для имеющихся ингредиентов или найти рецепты, похожие на Ваши.
             </Text>
           </View>
         ) : (
