@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
-    "@react-native-community/datetimepicker": "8.4.4",
+    "@react-native-community/datetimepicker": "8.5.1",
+    "android": "^0.0.8",
     "expo": "~54.0.30",
     "expo-constants": "^18.0.12",
     "expo-image-picker": "^17.0.10",
@@ -26,7 +27,8 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "@react-native-community/cli": "latest"
   },
   "private": true
 }
