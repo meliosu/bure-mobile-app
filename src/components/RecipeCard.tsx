@@ -53,22 +53,24 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onPress, onUpdat
         style={styles.image}
       />
       <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.name} numberOfLines={2}>
-            {recipe.name}
-          </Text>
-          {recipe.cookingTime && (
-            <View style={styles.timeContainer}>
-              <Clock size={14} color={colors.textTertiary} />
-              <Text style={styles.time}>{formatCookingTime(recipe.cookingTime)}</Text>
-            </View>
+        <View style={styles.topSection}>
+          <View style={styles.header}>
+            <Text style={styles.name} numberOfLines={2}>
+              {recipe.name}
+            </Text>
+            {recipe.cookingTime && (
+              <View style={styles.timeContainer}>
+                <Clock size={14} color={colors.textTertiary} />
+                <Text style={styles.time}>{formatCookingTime(recipe.cookingTime)}</Text>
+              </View>
+            )}
+          </View>
+          {recipe.description && (
+            <Text style={styles.description} numberOfLines={2}>
+              {recipe.description}
+            </Text>
           )}
         </View>
-        {recipe.description && (
-          <Text style={styles.description} numberOfLines={2}>
-            {recipe.description}
-          </Text>
-        )}
         <View style={styles.bottomRow}>
           <View style={styles.tagsContainer}>
             {recipe.tags && recipe.tags.length > 0 && (
@@ -109,6 +111,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     padding: spacing.md,
     marginBottom: spacing.md,
+    minHeight: 110,
     ...shadows.md,
   },
   image: {
@@ -120,6 +123,10 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     marginLeft: spacing.md,
+    justifyContent: 'space-between',
+  },
+  topSection: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -155,7 +162,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
   },
   tagsContainer: {
     flexDirection: 'row',

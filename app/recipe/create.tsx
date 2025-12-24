@@ -2,14 +2,13 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
   TouchableOpacity,
   Alert,
   Platform,
   Image,
-  KeyboardAvoidingView,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { X, Plus, Trash2, CalendarDays, Camera, ImageIcon } from 'lucide-react-native';
@@ -198,17 +197,17 @@ export default function RecipeCreateScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <KeyboardAvoidingView 
-        style={styles.keyboardAvoid} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      <KeyboardAwareScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        extraScrollHeight={Platform.OS === 'ios' ? 20 : 100}
+        extraHeight={120}
+        contentContainerStyle={styles.scrollContent}
       >
-        <ScrollView 
-          style={styles.content} 
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Name */}
+        {/* Name */}
           <Input
             label="Название *"
             value={formData.name}
@@ -420,8 +419,7 @@ export default function RecipeCreateScreen() {
         </View>
 
         <View style={styles.bottomSpacer} />
-      </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }
@@ -431,8 +429,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  keyboardAvoid: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
   },
   header: {
     flexDirection: 'row',
