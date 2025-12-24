@@ -9,6 +9,7 @@ import {
   Platform,
   Image,
   ActionSheetIOS,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -16,7 +17,7 @@ import { X, Plus, Trash2, CalendarDays, Camera, ImageIcon } from 'lucide-react-n
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { Recipe, RecipeUpdateInput } from '../../../src/types';
-import { getRecipeById, updateRecipe } from '../../../src/services';
+import { getRecipeById, updateRecipe, uploadImage, getApiBaseUrl } from '../../../src/services';
 import { Button, Input, Tag, Loading } from '../../../src/components';
 import { colors, spacing, borderRadius, typography } from '../../../src/constants';
 
@@ -128,7 +129,7 @@ export default function RecipeEditScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
-      aspect: [16, 9],
+      aspect: [1, 1],
       quality: 0.8,
     });
 
@@ -146,7 +147,7 @@ export default function RecipeEditScreen() {
 
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
-      aspect: [16, 9],
+      aspect: [1, 1],
       quality: 0.8,
     });
 
@@ -205,9 +206,29 @@ export default function RecipeEditScreen() {
 
     setSaving(true);
     try {
+      let imagePathForApi: string | undefined = formData.image;
+      
+      // Upload image if it's a new local file (not already an API path or external URL)
+      if (formData.image && 
+          !formData.image.startsWith('/images/') && 
+          !formData.image.startsWith(getApiBaseUrl())) {
+        try {
+          imagePathForApi = await uploadImage(formData.image);
+        } catch (uploadError) {
+          console.error('Image upload failed:', uploadError);
+          Alert.alert('Ошибка', 'Не удалось загрузить изображение. Изменения будут сохранены без нового фото.');
+          // Keep old image or no image
+          imagePathForApi = undefined;
+        }
+      } else if (formData.image?.startsWith(getApiBaseUrl())) {
+        // Convert full URL back to relative path for API
+        imagePathForApi = formData.image.replace(getApiBaseUrl(), '');
+      }
+
       const cleanData: RecipeUpdateInput = {
         ...formData,
         ingredients: (formData.ingredients || []).filter((i) => i.trim()),
+        image: imagePathForApi,
       };
       await updateRecipe(cleanData);
       router.back();
@@ -232,15 +253,24 @@ export default function RecipeEditScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Name */}
-        <Input
-          label="Название *"
-          value={formData.name || ''}
-          onChangeText={(text) => updateField('name', text)}
-          placeholder="Введите название рецепта"
-          error={errors.name}
-        />
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoid} 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <ScrollView 
+          style={styles.content} 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Name */}
+          <Input
+            label="Название *"
+            value={formData.name || ''}
+            onChangeText={(text) => updateField('name', text)}
+            placeholder="Введите название рецепта"
+            error={errors.name}
+          />
 
         {/* Description */}
         <Input
@@ -446,6 +476,7 @@ export default function RecipeEditScreen() {
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -454,6 +485,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  keyboardAvoid: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',

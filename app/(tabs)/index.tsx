@@ -8,10 +8,10 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import { Recipe, FilterOptions } from '../../src/types';
-import { getRecipes, searchRecipes, filterRecipes, updateLastCooked } from '../../src/services';
+import { getRecipes, filterRecipes, updateLastCooked } from '../../src/services';
 import { SearchBar, FilterButton, RecipeCard, Loading } from '../../src/components';
 import { colors, spacing, borderRadius, shadows } from '../../src/constants';
 
@@ -22,6 +22,7 @@ const defaultFilters: FilterOptions = {
 
 export default function RecipeListScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ filters?: string }>();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,35 +30,60 @@ export default function RecipeListScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Update filters when returning from filter screen
+  useEffect(() => {
+    if (params.filters) {
+      try {
+        const parsedFilters = JSON.parse(params.filters);
+        setFilters(parsedFilters);
+      } catch (e) {
+        console.error('Error parsing filters:', e);
+      }
+    }
+  }, [params.filters]);
+
   const loadRecipes = useCallback(async () => {
     try {
       const data = await getRecipes();
       setRecipes(data);
-      const filtered = await filterRecipes(data, filters);
-      setFilteredRecipes(filtered);
     } catch (error) {
       console.error('Error loading recipes:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filters]);
+  }, []);
 
+  // Apply local search and filtering
   useEffect(() => {
-    loadRecipes();
-  }, [loadRecipes]);
-
-  useEffect(() => {
-    const applySearch = async () => {
+    const applyFilters = async () => {
       let results = recipes;
+      
+      // Apply search locally
       if (searchQuery.trim()) {
-        results = await searchRecipes(searchQuery);
+        const lowerQuery = searchQuery.toLowerCase();
+        results = results.filter(
+          r =>
+            r.name.toLowerCase().includes(lowerQuery) ||
+            r.description?.toLowerCase().includes(lowerQuery) ||
+            r.ingredients.some(i => i.toLowerCase().includes(lowerQuery)) ||
+            r.tags?.some(t => t.toLowerCase().includes(lowerQuery))
+        );
       }
+      
+      // Apply filters locally
       const filtered = await filterRecipes(results, filters);
       setFilteredRecipes(filtered);
     };
-    applySearch();
+    applyFilters();
   }, [searchQuery, recipes, filters]);
+
+  // Reload recipes when screen comes into focus (after create/delete)
+  useFocusEffect(
+    useCallback(() => {
+      loadRecipes();
+    }, [loadRecipes])
+  );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);

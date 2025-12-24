@@ -1,4 +1,7 @@
-// Recipe Types
+// Recipe Types - App format (camelCase, ingredients as array)
+export type Difficulty = 'Легко' | 'Средне' | 'Сложно';
+export type ApiComplexity = 'easy' | 'medium' | 'hard';
+
 export interface Recipe {
   id: string;
   name: string;
@@ -7,13 +10,13 @@ export interface Recipe {
   image?: string;
   description?: string;
   cookingTime?: number; // in minutes
-  difficulty?: 'Легко' | 'Средне' | 'Сложно';
+  difficulty?: Difficulty;
   calories?: number;
   servings?: number;
   tags?: string[];
   lastCooked?: Date;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt?: Date;
 }
 
 export interface RecipeCreateInput {
@@ -23,7 +26,7 @@ export interface RecipeCreateInput {
   image?: string;
   description?: string;
   cookingTime?: number;
-  difficulty?: 'Легко' | 'Средне' | 'Сложно';
+  difficulty?: Difficulty;
   calories?: number;
   servings?: number;
   tags?: string[];
@@ -33,6 +36,53 @@ export interface RecipeCreateInput {
 export interface RecipeUpdateInput extends Partial<RecipeCreateInput> {
   id: string;
   lastCooked?: Date;
+}
+
+// API format types (snake_case, ingredients as object)
+export interface ApiRecipe {
+  id: string;
+  name: string;
+  description?: string | null;
+  ingredients: Record<string, string>;
+  instructions: string;
+  servings?: number | null;
+  cooking_time?: number | null;
+  complexity?: ApiComplexity | null;
+  calories?: number | null;
+  image?: string | null;
+  tags?: string[] | null;
+  last_cooked?: string | null;
+  created_at: string;
+}
+
+export interface ApiRecipeCreate {
+  name: string;
+  description?: string | null;
+  ingredients: Record<string, string>;
+  instructions: string;
+  servings?: number | null;
+  cooking_time?: number | null;
+  complexity?: ApiComplexity | null;
+  calories?: number | null;
+  image?: string | null;
+  tags?: string[] | null;
+  last_cooked?: string | null;
+}
+
+export interface ApiRecipeList {
+  recipes: ApiRecipe[];
+}
+
+export interface ApiRecipeId {
+  id: string;
+}
+
+export interface ApiDeleteResponse {
+  status: string;
+}
+
+export interface ApiImageUploadResponse {
+  image_path: string;
 }
 
 // User Types

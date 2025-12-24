@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, ImageSourcePropType } from 'react-native';
 import { Clock, CalendarDays } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Recipe } from '../types';
 import { colors, borderRadius, spacing, typography, shadows } from '../constants';
+
+const defaultImage = require('../../assets/default-image.png');
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -47,7 +49,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onPress, onUpdat
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
       <Image
-        source={{ uri: recipe.image || 'https://via.placeholder.com/100' }}
+        source={recipe.image ? { uri: recipe.image } : defaultImage}
         style={styles.image}
       />
       <View style={styles.content}>
@@ -68,15 +70,15 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onPress, onUpdat
           </Text>
         )}
         <View style={styles.bottomRow}>
-          {recipe.tags && recipe.tags.length > 0 && (
-            <View style={styles.tagsContainer}>
-              {recipe.tags.slice(0, 2).map((tag, index) => (
+          <View style={styles.tagsContainer}>
+            {recipe.tags && recipe.tags.length > 0 && (
+              recipe.tags.slice(0, 2).map((tag, index) => (
                 <View key={index} style={styles.tag}>
                   <Text style={styles.tagText}>#{tag}</Text>
                 </View>
-              ))}
-            </View>
-          )}
+              ))
+            )}
+          </View>
           <TouchableOpacity
             style={styles.lastCookedButton}
             onPress={handleLastCookedPress}

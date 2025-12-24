@@ -90,7 +90,10 @@ export default function FilterScreen() {
 
   const handleApply = () => {
     // Pass filters back via route params
-    router.back();
+    router.navigate({
+      pathname: '/(tabs)',
+      params: { filters: JSON.stringify(filters) },
+    });
   };
 
   const handleReset = () => {

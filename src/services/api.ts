@@ -6,68 +6,148 @@ import {
   UserSettings,
   ChatMessage,
   FilterOptions,
+  ApiRecipe,
+  ApiRecipeCreate,
+  ApiRecipeList,
+  ApiRecipeId,
+  ApiDeleteResponse,
+  ApiImageUploadResponse,
+  Difficulty,
+  ApiComplexity,
 } from '../types';
 
-// Mock data for recipes
-const mockRecipes: Recipe[] = [
-  {
-    id: '1',
-    name: 'Борщ очень вкусный (бабушкин рецепт)',
-    ingredients: ['Вода, 500 мл.', 'Свекла, 2 шт.', 'Картошка, 4 шт.', 'Сметана, 2 ст. л.', 'Зелень'],
-    instructions: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean finibus lacinia turpis molestie lobortis. Curabitur tincidunt orci turpis, ut finibus orci commodo a. Etiam id erat at mauris dapibus tempus. Nulla ut magna magna. Maecenas fermentum sem sit amet mollis consequat.',
-    image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean finibus lacinia turpis molestie lobortis. Curabitur tincidunt orci turpis, ut fini...',
-    cookingTime: 90,
-    difficulty: 'Сложно',
-    calories: 300,
-    servings: 2,
-    tags: ['суп', 'русское'],
-    lastCooked: new Date('2025-12-10'),
-    createdAt: new Date('2025-01-15'),
-    updatedAt: new Date('2025-01-15'),
-  },
-  {
-    id: '2',
-    name: 'Блины с орехами и сиропом',
-    ingredients: ['Мука, 200 г.', 'Молоко, 500 мл.', 'Яйца, 2 шт.', 'Орехи, 100 г.', 'Кленовый сироп'],
-    instructions: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean finibus lacinia turpis molestie lobortis. Curabitur tincidunt orci turpis, ut finibus orci commodo a.',
-    image: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean finibus lacinia turpis molestie lobortis. Curabitur tincidunt orci turpis, ut fini...',
-    cookingTime: 40,
-    difficulty: 'Легко',
-    tags: ['легко', 'блины'],
-    lastCooked: new Date('2025-11-25'),
-    createdAt: new Date('2025-02-10'),
-    updatedAt: new Date('2025-02-10'),
-  },
-  {
-    id: '3',
-    name: 'Пельмени',
-    ingredients: ['Мука, 400 г.', 'Фарш, 500 г.', 'Лук, 2 шт.', 'Соль', 'Перец'],
-    instructions: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean finibus lacinia turpis molestie lobortis. Curabitur tincidunt orci turpis, ut finibus orci commodo a.',
-    image: 'https://images.unsplash.com/photo-1547414368-1ae8e2c0ae4f?w=400',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean finibus lacinia turpis molestie lobortis. Curabitur tincidunt orci turpis, ut finibus orci commodo a.',
-    tags: ['быстро', 'вкусно', 'русское'],
-    createdAt: new Date('2025-03-01'),
-    updatedAt: new Date('2025-03-01'),
-  },
-  {
-    id: '4',
-    name: 'Торт "Красный бархат"',
-    ingredients: ['Мука, 300 г.', 'Какао, 30 г.', 'Красный краситель', 'Сливочный сыр, 500 г.', 'Сахар, 300 г.'],
-    instructions: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean finibus lacinia turpis molestie lobortis.',
-    image: 'https://images.unsplash.com/photo-1586788680434-30d324b2d46f?w=400',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean...',
-    cookingTime: 180,
-    difficulty: 'Сложно',
-    calories: 450,
-    servings: 8,
-    tags: ['десерт', 'торт', 'праздник'],
-    lastCooked: new Date('2025-12-01'),
-    createdAt: new Date('2025-03-15'),
-    updatedAt: new Date('2025-03-15'),
-  },
-];
+// API Configuration
+// TODO: Move to environment variable for production
+const API_BASE_URL = 'http://10.0.2.2:8000'; 
+
+// ============ TRANSFORMATION HELPERS ============
+
+const complexityToApiMap: Record<Difficulty, ApiComplexity> = {
+  'Легко': 'easy',
+  'Средне': 'medium',
+  'Сложно': 'hard',
+};
+
+const apiToComplexityMap: Record<ApiComplexity, Difficulty> = {
+  'easy': 'Легко',
+  'medium': 'Средне',
+  'hard': 'Сложно',
+};
+
+const difficultyToApi = (difficulty?: Difficulty): ApiComplexity | null => {
+  if (!difficulty) return null;
+  return complexityToApiMap[difficulty];
+};
+
+const apiToDifficulty = (complexity?: ApiComplexity | null): Difficulty | undefined => {
+  if (!complexity) return undefined;
+  return apiToComplexityMap[complexity];
+};
+
+// Convert ingredients array to object (for API)
+const ingredientsArrayToObject = (ingredients: string[]): Record<string, string> => {
+  const result: Record<string, string> = {};
+  ingredients.forEach((ingredient, index) => {
+    // Try to parse "ingredient, amount" format
+    const parts = ingredient.split(',').map(p => p.trim());
+    if (parts.length >= 2) {
+      result[parts[0]] = parts.slice(1).join(', ');
+    } else {
+      // If no comma, use the whole string as key with empty amount
+      result[ingredient] = '';
+    }
+  });
+  return result;
+};
+
+// Convert ingredients object to array (from API)
+const ingredientsObjectToArray = (ingredients: Record<string, string>): string[] => {
+  return Object.entries(ingredients).map(([name, amount]) => {
+    if (amount && amount.trim()) {
+      return `${name}, ${amount}`;
+    }
+    return name;
+  });
+};
+
+// Build full image URL from API path
+const buildImageUrl = (imagePath?: string | null): string | undefined => {
+  if (!imagePath) return undefined;
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  // API returns paths like "/images/filename.jpg"
+  return `${API_BASE_URL}${imagePath}`;
+};
+
+// Transform API recipe to app format
+const transformApiRecipeToApp = (apiRecipe: ApiRecipe): Recipe => {
+  return {
+    id: apiRecipe.id,
+    name: apiRecipe.name,
+    description: apiRecipe.description || undefined,
+    ingredients: ingredientsObjectToArray(apiRecipe.ingredients),
+    instructions: apiRecipe.instructions,
+    servings: apiRecipe.servings || undefined,
+    cookingTime: apiRecipe.cooking_time || undefined,
+    difficulty: apiToDifficulty(apiRecipe.complexity),
+    calories: apiRecipe.calories || undefined,
+    image: buildImageUrl(apiRecipe.image),
+    tags: apiRecipe.tags || undefined,
+    lastCooked: apiRecipe.last_cooked ? new Date(apiRecipe.last_cooked) : undefined,
+    createdAt: new Date(apiRecipe.created_at),
+  };
+};
+
+// Transform app recipe input to API format
+const transformAppRecipeToApi = (input: RecipeCreateInput): ApiRecipeCreate => {
+  return {
+    name: input.name,
+    description: input.description || null,
+    ingredients: ingredientsArrayToObject(input.ingredients),
+    instructions: input.instructions,
+    servings: input.servings || null,
+    cooking_time: input.cookingTime || null,
+    complexity: difficultyToApi(input.difficulty),
+    calories: input.calories || null,
+    image: input.image || null,
+    tags: input.tags || null,
+    last_cooked: input.lastCooked ? input.lastCooked.toISOString().split('T')[0] : null,
+  };
+};
+
+// ============ API FETCH HELPERS ============
+
+class ApiError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+const apiFetch = async <T>(
+  endpoint: string,
+  options?: RequestInit
+): Promise<T> => {
+  const url = `${API_BASE_URL}${endpoint}`;
+  
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new ApiError(response.status, errorText || `HTTP ${response.status}`);
+  }
+
+  return response.json();
+};
+
+// ============ USER API (MOCKED - not in API spec) ============
 
 // Mock user data
 let mockUser: User = {
@@ -80,81 +160,152 @@ let mockUser: User = {
   },
 };
 
+// Simulate API delay for mocked endpoints
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const getUser = async (): Promise<User> => {
+  await delay(200);
+  return { ...mockUser };
+};
+
+export const updateUser = async (updates: Partial<User>): Promise<User> => {
+  await delay(300);
+  mockUser = { ...mockUser, ...updates };
+  return { ...mockUser };
+};
+
+export const updateUserSettings = async (settings: Partial<UserSettings>): Promise<User> => {
+  await delay(300);
+  mockUser.settings = { ...mockUser.settings, ...settings };
+  return { ...mockUser };
+};
+
+// ============ CHAT API (MOCKED - not in API spec) ============
+
 // Mock chat messages
 let mockChatMessages: ChatMessage[] = [];
 
-// Simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+export const getChatMessages = async (): Promise<ChatMessage[]> => {
+  await delay(100);
+  return [...mockChatMessages];
+};
+
+export const sendChatMessage = async (content: string): Promise<ChatMessage> => {
+  await delay(500);
+  
+  const userMessage: ChatMessage = {
+    id: Date.now().toString(),
+    role: 'user',
+    content,
+    timestamp: new Date(),
+  };
+  mockChatMessages.push(userMessage);
+
+  // Simulate AI response
+  await delay(1000);
+  const aiResponses = [
+    'Отличный вопрос! Для приготовления этого блюда вам понадобится около 30 минут и следующие ингредиенты:...',
+    'Из ваших ингредиентов можно сделать следующее блюдо: ...'
+  ];
+  
+  const assistantMessage: ChatMessage = {
+    id: (Date.now() + 1).toString(),
+    role: 'assistant',
+    content: aiResponses[Math.floor(Math.random() * aiResponses.length)],
+    timestamp: new Date(),
+  };
+  mockChatMessages.push(assistantMessage);
+
+  return assistantMessage;
+};
+
+export const clearChatHistory = async (): Promise<void> => {
+  await delay(200);
+  mockChatMessages = [];
+};
 
 // ============ RECIPE API ============
 
 export const getRecipes = async (): Promise<Recipe[]> => {
-  await delay(300);
-  return [...mockRecipes];
+  const response = await apiFetch<ApiRecipeList>('/recipes');
+  return response.recipes.map(transformApiRecipeToApp);
 };
 
 export const getRecipeById = async (id: string): Promise<Recipe | null> => {
-  await delay(200);
-  return mockRecipes.find(r => r.id === id) || null;
+  try {
+    const response = await apiFetch<ApiRecipe>(`/recipes/${id}`);
+    return transformApiRecipeToApp(response);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      return null;
+    }
+    throw error;
+  }
 };
 
 export const createRecipe = async (input: RecipeCreateInput): Promise<Recipe> => {
-  await delay(400);
-  // Note: Recipe is not actually saved. Will be handled by backend later.
-  const newRecipe: Recipe = {
-    ...input,
-    id: Date.now().toString(),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  // mockRecipes.unshift(newRecipe); // Disabled - will be saved by backend
-  console.log('Recipe created (not saved):', newRecipe);
-  return newRecipe;
+  const apiInput = transformAppRecipeToApi(input);
+  const response = await apiFetch<ApiRecipeId>('/recipes', {
+    method: 'POST',
+    body: JSON.stringify(apiInput),
+  });
+  
+  // Fetch the created recipe to return full data
+  const created = await getRecipeById(response.id);
+  if (!created) {
+    throw new Error('Failed to fetch created recipe');
+  }
+  return created;
 };
 
 export const updateRecipe = async (input: RecipeUpdateInput): Promise<Recipe> => {
-  await delay(400);
-  const index = mockRecipes.findIndex(r => r.id === input.id);
-  if (index === -1) {
-    throw new Error('Рецепт не найден');
-  }
-  // Note: Changes are not actually saved. Will be handled by backend later.
-  const updated: Recipe = {
-    ...mockRecipes[index],
-    ...input,
-    updatedAt: new Date(),
-  };
-  // mockRecipes[index] = updated; // Disabled - will be saved by backend
-  console.log('Recipe updated (not saved):', updated);
-  return updated;
+  const { id, ...rest } = input;
+  const apiInput = transformAppRecipeToApi(rest as RecipeCreateInput);
+  
+  const response = await apiFetch<ApiRecipe>(`/recipes/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(apiInput),
+  });
+  
+  return transformApiRecipeToApp(response);
 };
 
 export const deleteRecipe = async (id: string): Promise<void> => {
-  await delay(300);
-  const index = mockRecipes.findIndex(r => r.id === id);
-  if (index !== -1) {
-    mockRecipes.splice(index, 1);
-  }
+  await apiFetch<ApiDeleteResponse>(`/recipes/${id}`, {
+    method: 'DELETE',
+  });
 };
 
 export const updateLastCooked = async (id: string, date: Date): Promise<Recipe> => {
-  await delay(200);
-  const index = mockRecipes.findIndex(r => r.id === id);
-  if (index === -1) {
+  // Fetch current recipe, update last_cooked, and save
+  const current = await getRecipeById(id);
+  if (!current) {
     throw new Error('Рецепт не найден');
   }
-  mockRecipes[index] = {
-    ...mockRecipes[index],
+  
+  const updateInput: RecipeUpdateInput = {
+    id,
+    name: current.name,
+    ingredients: current.ingredients,
+    instructions: current.instructions,
+    description: current.description,
+    image: current.image,
+    cookingTime: current.cookingTime,
+    difficulty: current.difficulty,
+    calories: current.calories,
+    servings: current.servings,
+    tags: current.tags,
     lastCooked: date,
-    updatedAt: new Date(),
   };
-  return mockRecipes[index];
+  
+  return updateRecipe(updateInput);
 };
 
+// Client-side search (API doesn't have search endpoint)
 export const searchRecipes = async (query: string): Promise<Recipe[]> => {
-  await delay(200);
+  const recipes = await getRecipes();
   const lowerQuery = query.toLowerCase();
-  return mockRecipes.filter(
+  return recipes.filter(
     r =>
       r.name.toLowerCase().includes(lowerQuery) ||
       r.description?.toLowerCase().includes(lowerQuery) ||
@@ -163,11 +314,11 @@ export const searchRecipes = async (query: string): Promise<Recipe[]> => {
   );
 };
 
+// Client-side filtering (API doesn't have filter endpoint)
 export const filterRecipes = async (
   recipes: Recipe[],
   filters: FilterOptions
 ): Promise<Recipe[]> => {
-  await delay(100);
   let result = [...recipes];
 
   // Filter by tags
@@ -222,69 +373,56 @@ export const filterRecipes = async (
   return result;
 };
 
+// Get all unique tags from recipes
 export const getAllTags = async (): Promise<string[]> => {
-  await delay(100);
+  const recipes = await getRecipes();
   const tags = new Set<string>();
-  mockRecipes.forEach(r => r.tags?.forEach(t => tags.add(t)));
+  recipes.forEach(r => r.tags?.forEach(t => tags.add(t)));
   return Array.from(tags);
 };
 
-// ============ USER API ============
+// ============ IMAGE API ============
 
-export const getUser = async (): Promise<User> => {
-  await delay(200);
-  return { ...mockUser };
-};
-
-export const updateUser = async (updates: Partial<User>): Promise<User> => {
-  await delay(300);
-  mockUser = { ...mockUser, ...updates };
-  return { ...mockUser };
-};
-
-export const updateUserSettings = async (settings: Partial<UserSettings>): Promise<User> => {
-  await delay(300);
-  mockUser.settings = { ...mockUser.settings, ...settings };
-  return { ...mockUser };
-};
-
-// ============ CHAT API ============
-
-export const getChatMessages = async (): Promise<ChatMessage[]> => {
-  await delay(100);
-  return [...mockChatMessages];
-};
-
-export const sendChatMessage = async (content: string): Promise<ChatMessage> => {
-  await delay(500);
+export const uploadImage = async (imageUri: string): Promise<string> => {
+  // Get filename from URI
+  const filename = imageUri.split('/').pop() || 'image.jpg';
   
-  const userMessage: ChatMessage = {
-    id: Date.now().toString(),
-    role: 'user',
-    content,
-    timestamp: new Date(),
-  };
-  mockChatMessages.push(userMessage);
+  // Determine MIME type
+  const extension = filename.split('.').pop()?.toLowerCase();
+  let mimeType = 'image/jpeg';
+  if (extension === 'png') mimeType = 'image/png';
+  else if (extension === 'gif') mimeType = 'image/gif';
+  else if (extension === 'webp') mimeType = 'image/webp';
 
-  // Simulate AI response
-  await delay(1000);
-  const aiResponses = [
-    'Отличный вопрос! Для приготовления этого блюда вам понадобится около 30 минут и следующие ингредиенты:...',
-    'Из ваших ингредиентов можно сделать следующее блюдо: ...'
-  ];
-  
-  const assistantMessage: ChatMessage = {
-    id: (Date.now() + 1).toString(),
-    role: 'assistant',
-    content: aiResponses[Math.floor(Math.random() * aiResponses.length)],
-    timestamp: new Date(),
-  };
-  mockChatMessages.push(assistantMessage);
+  // Create FormData for multipart upload
+  const formData = new FormData();
+  formData.append('file', {
+    uri: imageUri,
+    name: filename,
+    type: mimeType,
+  } as any);
 
-  return assistantMessage;
+  const response = await fetch(`${API_BASE_URL}/images`, {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new ApiError(response.status, errorText || `HTTP ${response.status}`);
+  }
+
+  const result: ApiImageUploadResponse = await response.json();
+  return result.image_path;
 };
 
-export const clearChatHistory = async (): Promise<void> => {
-  await delay(200);
-  mockChatMessages = [];
+// Get full image URL
+export const getImageUrl = (imagePath: string): string => {
+  return buildImageUrl(imagePath) || '';
 };
+
+// Export API base URL for components that need it
+export const getApiBaseUrl = (): string => API_BASE_URL;

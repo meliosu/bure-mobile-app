@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,14 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import Constants from 'expo-constants';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { ArrowLeft, Pencil, Trash2, Clock, ChefHat, Users, Flame, CalendarDays } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Recipe } from '../../src/types';
 import { getRecipeById, deleteRecipe, updateLastCooked } from '../../src/services';
 import { Button, Loading, ConfirmDialog } from '../../src/components';
+
+const defaultImage = require('../../assets/default-image.png');
 import { colors, spacing, borderRadius, typography, shadows } from '../../src/constants';
 
 export default function RecipeDetailScreen() {
@@ -27,11 +29,7 @@ export default function RecipeDetailScreen() {
   const [deleting, setDeleting] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  useEffect(() => {
-    loadRecipe();
-  }, [id]);
-
-  const loadRecipe = async () => {
+  const loadRecipe = useCallback(async () => {
     if (!id) return;
     try {
       const data = await getRecipeById(id);
@@ -41,7 +39,14 @@ export default function RecipeDetailScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  // Reload recipe when screen comes into focus (after editing)
+  useFocusEffect(
+    useCallback(() => {
+      loadRecipe();
+    }, [loadRecipe])
+  );
 
   const handleEdit = () => {
     router.push(`/recipe/edit/${id}`);
@@ -120,9 +125,10 @@ export default function RecipeDetailScreen() {
         </View>
 
         {/* Recipe Image */}
-        {recipe.image && (
-          <Image source={{ uri: recipe.image }} style={styles.image} />
-        )}
+        <Image 
+          source={recipe.image ? { uri: recipe.image } : defaultImage} 
+          style={styles.image} 
+        />
 
         {/* Recipe Header */}
         <View style={styles.headerContainer}>

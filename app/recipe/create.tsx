@@ -8,6 +8,7 @@ import {
   Alert,
   Platform,
   Image,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -15,7 +16,7 @@ import { X, Plus, Trash2, CalendarDays, Camera, ImageIcon } from 'lucide-react-n
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { RecipeCreateInput } from '../../src/types';
-import { createRecipe } from '../../src/services';
+import { createRecipe, uploadImage } from '../../src/services';
 import { Button, Input, Tag } from '../../src/components';
 import { colors, spacing, borderRadius, typography, shadows } from '../../src/constants';
 
@@ -44,7 +45,7 @@ export default function RecipeCreateScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
-      aspect: [4, 3],
+      aspect: [1, 1],
       quality: 0.8,
     });
 
@@ -63,7 +64,7 @@ export default function RecipeCreateScreen() {
 
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
-      aspect: [4, 3],
+      aspect: [1, 1],
       quality: 0.8,
     });
 
@@ -159,9 +160,24 @@ export default function RecipeCreateScreen() {
 
     setLoading(true);
     try {
+      let imagePathForApi: string | undefined = undefined;
+      
+      // Upload image if selected (and it's a local file, not already an API path)
+      if (formData.image && !formData.image.startsWith('/images/')) {
+        try {
+          imagePathForApi = await uploadImage(formData.image);
+        } catch (uploadError) {
+          console.error('Image upload failed:', uploadError);
+          Alert.alert('Ошибка', 'Не удалось загрузить изображение. Рецепт будет создан без фото.');
+        }
+      } else {
+        imagePathForApi = formData.image;
+      }
+
       const cleanData: RecipeCreateInput = {
         ...formData,
         ingredients: formData.ingredients.filter((i) => i.trim()),
+        image: imagePathForApi,
       };
       await createRecipe(cleanData);
       router.back();
@@ -182,15 +198,24 @@ export default function RecipeCreateScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Name */}
-        <Input
-          label="Название *"
-          value={formData.name}
-          onChangeText={(text) => updateField('name', text)}
-          placeholder="Введите название рецепта"
-          error={errors.name}
-        />
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoid} 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <ScrollView 
+          style={styles.content} 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Name */}
+          <Input
+            label="Название *"
+            value={formData.name}
+            onChangeText={(text) => updateField('name', text)}
+            placeholder="Введите название рецепта"
+            error={errors.name}
+          />
 
         {/* Description */}
         <Input
@@ -396,6 +421,7 @@ export default function RecipeCreateScreen() {
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -404,6 +430,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  keyboardAvoid: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
